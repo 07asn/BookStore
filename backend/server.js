@@ -1,10 +1,21 @@
 const express = require("express");
 const cors = require("cors");
-const { query } = require("./db");
+const { Book } = require("./index");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+(async () => {
+    try {
+        await Book.sequelize.authenticate();
+        console.log("Database connected...");
+        await Book.sync();
+    } catch (error) {
+        console.error("Unable to connect to the database:", error);
+    }
+})();
+
 
 /*
 --------------------------
@@ -13,8 +24,8 @@ app.use(express.json());
 */
 app.get("/books", async (req, res) => {
     try {
-        const result = await query("SELECT * FROM books");
-        res.json(result.rows);
+        const books = await Book.findAll();
+        res.json(books);
     } catch (error) {
         console.error("Error fetching books:", error);
         res.status(500).json({ error: "Internal Server Error" });
@@ -29,12 +40,14 @@ app.get("/books", async (req, res) => {
 app.post("/books", async (req, res) => {
     const { title, author, genre, publication_date, description } = req.body;
     try {
-        await query(
-            `INSERT INTO books (title, author, genre, publication_date, description)
-            VALUES ($1, $2, $3, $4, $5)`,
-            [title, author, genre, publication_date, description]
-        );
-        res.json({ message: "Book added" });
+        const newBook = await Book.create({
+            title,
+            author,
+            genre,
+            publication_date,
+            description,
+        });
+        res.json({ message: "Book added", book: newBook });
     } catch (error) {
         console.error("Error adding book:", error);
         res.status(500).json({ error: "Internal Server Error" });
@@ -50,13 +63,17 @@ app.put("/books/:id", async (req, res) => {
     const { title, author, genre, publication_date, description } = req.body;
     const { id } = req.params;
     try {
-        await query(
-            `UPDATE books 
-        SET title = $1, author = $2, genre = $3, publication_date = $4, description = $5
-        WHERE id = $6`,
-            [title, author, genre, publication_date, description, id]
-        );
-        res.json({ message: "Book updated" });
+        const book = await Book.findByPk(id);
+        if (!book) {
+            return res.status(404).json({ error: "Book not found" });
+        }
+        book.title = title;
+        book.author = author;
+        book.genre = genre;
+        book.publication_date = publication_date;
+        book.description = description;
+        await book.save();
+        res.json({ message: "Book updated", book });
     } catch (error) {
         console.error("Error updating book:", error);
         res.status(500).json({ error: "Internal Server Error" });
@@ -71,7 +88,11 @@ app.put("/books/:id", async (req, res) => {
 app.delete("/books/:id", async (req, res) => {
     const { id } = req.params;
     try {
-        await query("DELETE FROM books WHERE id = $1", [id]);
+        const book = await Book.findByPk(id);
+        if (!book) {
+            return res.status(404).json({ error: "Book not found" });
+        }
+        await book.destroy();
         res.json({ message: "Book deleted" });
     } catch (error) {
         console.error("Error deleting book:", error);
