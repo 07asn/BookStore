@@ -1,17 +1,24 @@
+require('dotenv').config(); // Load env variables
 const { Sequelize } = require("sequelize");
 
-// Sequelize connection
-const sequelize = new Sequelize("book_catalog", "postgres", "123", {
-    host: "localhost",
-    dialect: "postgres",
-});
+// Use environment variables for configuration
+const sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASS,
+    {
+        host: process.env.DB_HOST,
+        dialect: "postgres",
+        port: process.env.DB_PORT,
+    }
+);
 
 const db = {};
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// The Book Model
+// Define the Book Model with an explicit table name
 db.Book = sequelize.define("Book", {
     title: {
         type: Sequelize.STRING,
@@ -34,7 +41,7 @@ db.Book = sequelize.define("Book", {
         allowNull: true,
     },
 }, {
-    tableName: 'books',  // Table name
+    tableName: 'books',  
     timestamps: false,
 });
 
