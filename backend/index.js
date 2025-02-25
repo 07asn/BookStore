@@ -1,7 +1,9 @@
-require('dotenv').config(); // Load env variables
+require('dotenv').config();
 const { Sequelize } = require("sequelize");
 
-// Use environment variables for configuration
+//-------------------------------------
+// Configuration
+//-------------------------------------
 const sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
@@ -18,7 +20,9 @@ const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// Define the Book Model with an explicit table name
+//-------------------------------------
+// Define Book Model
+//-------------------------------------
 db.Book = sequelize.define("Book", {
     title: {
         type: Sequelize.STRING,
